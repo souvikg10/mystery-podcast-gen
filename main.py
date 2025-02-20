@@ -86,8 +86,8 @@ def generate_podcast_script(content: str) -> str:
     """Generate a two-speaker mystery style script using Gemini."""
     prompt = """
     Transform the following content into a compelling true crime style podcast script between two hosts.
-    Format it as a dramatic investigation where one host is the primary narrator (Detective) and the other 
-    is an investigative journalist who uncovers additional layers.
+    Format it as a dramatic investigation where one host is the primary narrator (Speaker 1) and the other 
+    is an investigative journalist(Speaker 2) who uncovers additional layers.
 
     Style Guidelines:
     - Use dramatic tension and suspense
@@ -95,16 +95,11 @@ def generate_podcast_script(content: str) -> str:
     - Add atmospheric details and scene-setting
     - Include dramatic pauses and revelations
     - Reference "evidence" from the original content
-    - Create cliffhangers between segments
-    - Use true crime podcast conventions like "But what we discovered next changed everything..."
-
-    Format each line as:
-    **Speaker 1:** (tone) dialogue
+    
+    MUST Format each line as:
+    **Speaker 1:** dialogue
     or
-    **Speaker 2:** (tone) dialogue
-
-    Tone indicators should suggest suspense, revelation, or tension.
-    Example tones: (suspensefully), (with growing concern), (making a dramatic revelation)
+    **Speaker 2:** dialogue
 
     Content to transform:
     {content}
