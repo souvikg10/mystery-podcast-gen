@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podcast Generator</title>
+    <script>
+        // Tailwind Dark Mode Config
+        window.tailwindConfig = {
+            darkMode: 'class'
+        };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.10/htmx.min.js"></script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Check for saved dark mode preference on page load
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // Theme toggle function
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            // Refresh icons after theme change
+            lucide.createIcons();
+        }
+    </script>
+</head>
+<body class="h-full bg-gray-50 flex flex-col">
+    <!-- Menu Bar -->
+    <div class="bg-white dark:bg-gray-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="h-16 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i data-lucide="mic" class="w-6 h-6 text-indigo-600 dark:text-indigo-400 mr-2"></i>
+                    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Podcast Generator</h1>
+                </div>
+                <button 
+                    type="button"
+                    id="theme-toggle" 
+                    class="rounded-lg p-2.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+                    onclick="toggleDarkMode()">
+                    <i data-lucide="sun" class="hidden h-5 w-5 dark:block"></i>
+                    <i data-lucide="moon" class="h-5 w-5 dark:hidden"></i>
+                    <span class="sr-only">Toggle dark mode</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Left Sidebar - PDF Upload -->
+        <div class="w-72 bg-white border-r border-gray-200 p-4 flex flex-col">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Upload PDF</h2>
+            
+            <!-- Upload Section -->
+            <div class="flex-1">
+                <div class="w-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
+                    <i data-lucide="file-text" class="w-10 h-10 text-gray-400 mb-3"></i>
+                    <input type="file" 
+                           name="file"
+                           accept=".pdf"
+                           class="hidden" 
+                           id="pdf-upload"
+                           hx-encoding="multipart/form-data"
+                           hx-post="/upload"
+                           hx-target="#processing-status"
+                           hx-trigger="change">
+                    <button type="button"
+                            id="upload-btn"
+                            onclick="document.getElementById('pdf-upload').click()"
+                            class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-sm font-medium">
+                        Choose PDF
+                    </button>
+                    
+                    <!-- Loading indicator -->
+                    <div id="loading-indicator" class="hidden items-center space-x-2 mt-4">
+                        <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-sm text-gray-600">Processing...</span>
+                    </div>
+                </div>
+                <div id="processing-status" class="mt-4 text-center text-sm"></div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col bg-white">
+            <!-- Transcript Area -->
+            <div class="flex-1 p-4 overflow-y-auto" style="max-height: calc(100vh - 200px);">
+                <div class="max-w-3xl mx-auto" id="transcript-content">
+                    <!-- Transcript content will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Audio Control Section -->
+            <div class="border-t border-gray-200 p-4 bg-white">
+                <div class="max-w-3xl mx-auto">
+                    <!-- Generate Podcast Button -->
+                    <button 
+                        id="generate-podcast"
+                        onclick="generatePodcast()"
+                        disabled
+                        class="w-full bg-indigo-500 text-white py-2 px-4 rounded-lg hover:bg-indigo-600 transition-colors flex items-center justify-center space-x-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed mb-2">
+                        <i data-lucide="mic" class="w-5 h-5"></i>
+                        <span>Generate Podcast</span>
+                    </button>
+                    
+                    <!-- Audio Player -->
+                    <div id="audio-section"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Handle file upload states
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            if (evt.detail.target.id === 'processing-status') {
+                document.getElementById('loading-indicator').style.display = 'flex';
+                document.getElementById('upload-btn').style.display = 'none';
+                evt.detail.target.innerHTML = '';
+            }
+        });
+
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.target.id === 'processing-status') {
+                document.getElementById('loading-indicator').style.display = 'none';
+                document.getElementById('upload-btn').style.display = 'block';
+                
+                if (evt.detail.successful) {
+                    const response = JSON.parse(evt.detail.xhr.response);
+                    if (response.transcript) {
+                        updateTranscript(response.transcript);
+                        document.getElementById('generate-podcast').disabled = false;
+                        evt.detail.target.innerHTML = '<span class="text-green-600">✓ PDF processed successfully</span>';
+                    }
+                } else {
+                    evt.detail.target.innerHTML = '<span class="text-red-600">Error processing PDF</span>';
+                }
+            }
+        });
+
+        function updateTranscript(transcript) {
+            const transcriptDiv = document.getElementById('transcript-content');
+            const segments = transcript.split('\n\n');
+            
+            const html = segments.map(segment => {
+                if (segment.trim() === '') return '';
+                
+                const speakerMatch = segment.match(/\*\*(Speaker \d):\*\*/);
+                if (!speakerMatch) return '';
+                
+                const speaker = speakerMatch[1];
+                const content = segment.replace(/\*\*(Speaker \d):\*\*/, '').trim();
+                
+                const toneMatch = content.match(/\((.*?)\)/);
+                const tone = toneMatch ? toneMatch[1] : '';
+                const text = content.replace(/\((.*?)\)/, '').trim();
+                
+                return `
+                    <div class="mb-6">
+                        <div class="flex items-start gap-4">
+                            <span class="text-sm font-medium text-${speaker === 'Speaker 1' ? 'purple' : 'orange'}-600 w-24 flex-shrink-0">
+                                ${speaker}
+                            </span>
+                            <div class="flex-1 p-4 bg-${speaker === 'Speaker 1' ? 'purple' : 'orange'}-50 rounded-lg">
+                                ${tone ? `<div class="text-sm italic text-gray-500 mb-2">${tone}</div>` : ''}
+                                <div class="text-gray-800" contenteditable="true">${text}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            transcriptDiv.innerHTML = html;
+        }
+
+        function generatePodcast() {
+            const transcriptDiv = document.getElementById('transcript-content');
+            let transcript = '';
+            
+            // Collect transcript content
+            transcriptDiv.querySelectorAll('.mb-6').forEach(segment => {
+                const speaker = segment.querySelector('.text-sm').textContent.trim();
+                const tone = segment.querySelector('.italic')?.textContent.trim();
+                const text = segment.querySelector('[contenteditable]').textContent.trim();
+                
+                transcript += `**${speaker}:**`;
+                if (tone) transcript += ` (${tone})`;
+                transcript += ` ${text}\n\n`;
+            });
+            
+            // Show loading state
+            const button = document.getElementById('generate-podcast');
+            button.disabled = true;
+            button.innerHTML = '<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            
+            // Generate podcast
+            fetch('/generate-podcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transcript: transcript })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const audioUrl = URL.createObjectURL(blob);
+                document.getElementById('audio-section').innerHTML = `
+                    <audio controls class="w-full">
+                        <source src="${audioUrl}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                `;
+                
+                // Reset button
+                button.disabled = false;
+                button.innerHTML = '<i data-lucide="mic" class="w-5 h-5"></i><span>Generate Podcast</span>';
+                lucide.createIcons();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.disabled = false;
+                button.innerHTML = '<i data-lucide="mic" class="w-5 h-5"></i><span>Generate Podcast</span>';
+                lucide.createIcons();
+                alert('Error generating podcast. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>
