@@ -50,7 +50,7 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY not found in environment variables")
 
 genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 def extract_pdf_content(pdf_path: Path) -> str:
     """Extract text content from PDF file."""
@@ -85,10 +85,26 @@ def get_content_from_gemini(pdf_content: str) -> str:
 def generate_podcast_script(content: str) -> str:
     """Generate a two-speaker mystery style script using Gemini."""
     prompt = """
-    Transform the following content into an engaging two-speaker mystery style podcast script.
-    Make it intriguing and dramatic. Include interuptions and contradictions. Make it sound very intriguing.
-    Format each speaker line with '**Speaker 1:**' or '**Speaker 2:**'
-    
+    Transform the following content into a compelling true crime style podcast script between two hosts.
+    Format it as a dramatic investigation where one host is the primary narrator (Detective) and the other 
+    is an investigative journalist who uncovers additional layers.
+
+    Style Guidelines:
+    - Use dramatic tension and suspense
+    - Frame the content as a mystery being unraveled
+    - Add atmospheric details and scene-setting
+    - Include dramatic pauses and revelations
+    - Reference "evidence" from the original content
+    - Create cliffhangers between segments
+    - Use true crime podcast conventions like "But what we discovered next changed everything..."
+
+    Format each line as:
+    **Speaker 1:** (tone) dialogue
+    or
+    **Speaker 2:** (tone) dialogue
+
+    Tone indicators should suggest suspense, revelation, or tension.
+    Example tones: (suspensefully), (with growing concern), (making a dramatic revelation)
 
     Content to transform:
     {content}
