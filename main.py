@@ -1,8 +1,3 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
 import google.generativeai as genai
 import openai
 import PyPDF2
@@ -10,8 +5,18 @@ import io
 import os
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
 import re
 import asyncio
+import httpx
+from bs4 import BeautifulSoup
+from enum import Enum
+from fastapi import FastAPI, File, HTTPException, Request, Form
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.datastructures import UploadFile
 
 app = FastAPI()
 
@@ -52,59 +57,52 @@ if not OPENAI_API_KEY:
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-def extract_pdf_content(pdf_path: Path) -> str:
-    """Extract text content from PDF file."""
-    content = ""
-    try:
-        with open(pdf_path, 'rb') as file:
-            pdf_reader = PyPDF2.PdfReader(file)
-            for page in pdf_reader.pages:
-                content += page.extract_text() + "\n"
-        return content
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error extracting PDF content: {str(e)}")
+class ContentCategory(str, Enum):
+    RESEARCH = "research"
+    TECHNICAL = "technical"
 
-def get_content_from_gemini(pdf_content: str) -> str:
-    """Use Gemini to process and structure the PDF content."""
-    prompt = """
-    Please read and analyze the following content. Provide an in-depth analysis of the content.
-    Make it understandable in simple concepts and entertaining. The content should be revised to make it clear and understandable and fun to read.
-
-    This content is to used to generate an intriguing transcript later.
-
-    Content:
-    {content}
-    """
+PROMPTS = {
+    ContentCategory.RESEARCH: """
+    Transform this research paper into a thrilling true crime narrative podcast.
+    Frame the research problem as a mystery, methods as investigation techniques,
+    and findings as dramatic revelations. Use dramatic tension and create suspense
+    around the research outcomes.
+    The conversation is happening between two speakers. Focus only on what they will say
+    No additional sound cues.
     
-    try:
-        response = model.generate_content(prompt.format(content=pdf_content))
-        return response.text
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing with Gemini: {str(e)}")
-
-def generate_podcast_script(content: str) -> str:
-    """Generate a two-speaker mystery style script using Gemini."""
-    prompt = """
-    Transform the following content into a compelling true crime style podcast script between two hosts.
-    Format it as a dramatic investigation where one host is the primary narrator (Speaker 1) and the other 
-    is an investigative journalist(Speaker 2) who uncovers additional layers.
-
     Style Guidelines:
-    - Use dramatic tension and suspense
-    - Frame the content as a mystery being unraveled
-    - Add atmospheric details and scene-setting
-    - Include dramatic pauses and revelations
-    - Reference "evidence" from the original content
+    - Present the research question as an unsolved mystery
+    - Turn methodology into detective work
+    - Frame data analysis as uncovering evidence
+    - Present findings as breakthrough revelations
     
-    MUST Format each line as:
-    **Speaker 1:** dialogue
-    or
-    **Speaker 2:** dialogue
 
-    Content to transform:
+    Original content:
+    {content}
+    """,
+    
+    ContentCategory.TECHNICAL: """
+    Transform this technical documentation into a conspiracy theory style podcast script.
+    Present the technical concepts as hidden knowledge being revealed, with connections
+    and patterns that "they don't want you to know about."
+    The conversation is happening between two speakers. Focus only on what they will say
+    No additional sound cues.
+    
+    Style Guidelines:
+    - Frame technical concepts as "hidden knowledge"
+    - Present features as "secret capabilities"
+    - Connect different parts of the documentation in unexpected ways
+    - Use phrases like "But here's what they're not telling you..."
+    
+    
+    Original content:
     {content}
     """
-    
+}
+
+
+def generate_podcast_script(prompt: str, content: str) -> str:
+    """Generate a two-speaker mystery style script using Gemini."""
     try:
         response = model.generate_content(prompt.format(content=content))
         return response.text
@@ -117,49 +115,141 @@ async def read_root():
     """Serve the index.html page from static directory."""
     return FileResponse('static/index.html')
 
-@app.post("/upload")
-async def upload_pdf(file: UploadFile = File(...)):
-    """Handle PDF upload and processing."""
-    print(f"Received file: {file.filename}") 
+async def process_pdf_file(file: UploadFile) -> str:
+    """Process a single PDF file and return its content."""
     if not file.filename.endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="File must be a PDF")
+        raise HTTPException(status_code=400, detail=f"File {file.filename} must be a PDF")
     
     try:
-        # Generate unique filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        base_filename = file.filename.rsplit('.', 1)[0]
-        safe_filename = f"{base_filename}_{timestamp}.pdf"
-        pdf_path = DOCS_DIR / safe_filename
+        content = await file.read()
+        pdf = PyPDF2.PdfReader(io.BytesIO(content))
+        text_content = ""
+        for page in pdf.pages:
+            text_content += page.extract_text() + "\n"
+        return text_content
+    except Exception as e:
+        print(f"Error processing PDF {file.filename}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing PDF {file.filename}")
+
+async def process_url(url: str) -> str:
+    """Process a single URL and return its content."""
+    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Remove unnecessary elements
+            for element in soup.find_all(['nav', 'footer', 'script', 'style', 'header', 'aside']):
+                element.decompose()
+            
+            # Try multiple content selectors
+            content = (
+                soup.find('main') or 
+                soup.find('article') or 
+                soup.find('div', class_=['content', 'documentation', 'docs-content']) or
+                soup.find('div', id=['content', 'main-content', 'documentation'])
+            )
+            
+            return content.get_text(separator='\n', strip=True) if content else soup.get_text(separator='\n', strip=True)
+            
+        except Exception as e:
+            print(f"Error processing URL {url}: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Failed to process URL: {url}")
+
+@app.post("/upload")
+async def upload_content(request: Request):
+    """Handle multiple files or URLs upload."""
+    try:
+        # Get content type from request
+        content_type = request.headers.get('content-type', '')
         
-        # Save PDF file
-        with open(pdf_path, "wb") as pdf_file:
-            content = await file.read()
-            pdf_file.write(content)
+        if 'multipart/form-data' in content_type:
+            # Handle PDF files
+            form = await request.form()
+            files = form.getlist('files')
+            category = ContentCategory.RESEARCH
+            
+            # Process all PDF files
+            contents = []
+            for file in files:
+                if isinstance(file, UploadFile):
+                    content = await process_pdf_file(file)
+                    contents.append(content)
+            
+        else:
+            # Handle URLs
+            json_data = await request.json()
+            urls = json_data.get('urls', [])
+            category = ContentCategory.TECHNICAL
+            
+            # Process all URLs in parallel
+            contents = await asyncio.gather(*[process_url(url) for url in urls])
         
-        # Extract content from PDF
-        pdf_content = extract_pdf_content(pdf_path)
+        if not contents:
+            raise HTTPException(status_code=400, detail="No content to process")
+        
+        # Combine all content
+        combined_content = "\n\n=== Next Document ===\n\n".join(contents)
         # Process with Gemini
-        processed_content = get_content_from_gemini(pdf_content)
-        # Save processed content
-        content_filename = f"{base_filename}_{timestamp}.txt"
-        content_path = EXTRACTED_CONTENT_DIR / content_filename
-        with open(content_path, "w", encoding="utf-8") as content_file:
-            content_file.write(processed_content)
+        processed_content = generate_content_summary(combined_content)
         
-        # Generate podcast script
-        podcast_script = generate_podcast_script(processed_content)
-        script_filename = f"{base_filename}_{timestamp}.txt"
-        script_path = TRANSCRIPT_CONTENT_DIR / script_filename
-        with open(script_path, "w", encoding="utf-8") as script_file:
-            script_file.write(podcast_script)
-        return JSONResponse(content={
-            "message": "PDF processed successfully",
-            "filename": safe_filename,
-            "transcript": podcast_script
+        # Generate transcript
+        transcript = generate_podcast_script(category, processed_content)
+        
+        # Save processed content and transcript
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        content_path = EXTRACTED_CONTENT_DIR / f"combined_content_{timestamp}.txt"
+        with open(content_path, "w", encoding="utf-8") as f:
+            f.write(processed_content)
+            
+        transcript_path = TRANSCRIPT_CONTENT_DIR / f"transcript_{timestamp}.txt"
+        with open(transcript_path, "w", encoding="utf-8") as f:
+            f.write(transcript)
+        
+        return JSONResponse({
+            "message": "Content processed successfully",
+            "transcript": transcript
         })
         
     except Exception as e:
+        print("Error in upload_content")
         raise HTTPException(status_code=500, detail=str(e))
+
+def generate_content_summary(content: str) -> str:
+    """Generate a summary of combined content using Gemini."""
+    prompt = """
+    Analyze and synthesize the following content into a coherent narrative.
+    Each document is separated by '=== Next Document ==='.
+    Find connections between the documents and create a unified story.
+    Make it clear and engaging while preserving the key information from each source.
+
+    Content to analyze:
+    {content}
+    """
+    
+    try:
+        response = model.generate_content(prompt.format(content=content))
+        return response.text
+    except Exception as e:
+        print(f"Error generating content summary: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating content summary")
+
+def generate_podcast_script(category: ContentCategory, content: str) -> str:
+    """Generate a podcast script based on the category."""
+    prompt = PROMPTS[category]
+    try:
+        response = model.generate_content(prompt.format(content=content))
+        return response.text
+    except Exception as e:
+        print(f"Error generating podcast script: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating podcast script")
+
 
 @app.post("/generate-podcast")
 async def generate_podcast(request: Request):
@@ -270,6 +360,52 @@ async def generate_audio(transcript):
         print(e)
         raise e
 
+@app.post("/refine-transcript")
+async def refine_transcript(request: Request):
+    try:
+        data = await request.json()
+        transcript = data.get('transcript')
+        refinement_notes = data.get('refinement_notes')
+        
+        if not transcript or not refinement_notes:
+            raise HTTPException(status_code=400, detail="Missing transcript or refinement notes")
+        
+        prompt = """
+        Refine the following podcast transcript according to these notes while keeping 
+        the core content and information intact. Maintain the same two-speaker format 
+        and dramatic elements, but adjust the style and presentation as requested.
+
+        Original Transcript:
+        {transcript}
+
+        Refinement Notes:
+        {notes}
+
+        Keep the format:
+        **Speaker 1:** (tone) dialogue
+        **Speaker 2:** (tone) dialogue
+
+        Make sure to:
+        1. Keep all important information from the original
+        2. Maintain the conversational flow
+        3. Apply the requested style changes
+        4. Keep dramatic elements and tone indicators
+        5. Preserve the alternating speaker format
+        """
+        
+        response = model.generate_content(
+            prompt.format(transcript=transcript, notes=refinement_notes)
+        )
+        
+        return JSONResponse({
+            "message": "Transcript refined successfully",
+            "transcript": response.text
+        })
+        
+    except Exception as e:
+        print("Error refining transcript")
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
