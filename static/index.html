@@ -1,208 +1,791 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="scroll-smooth">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Narrative Podcast Generator</title>
-    <script>
-        window.tailwindConfig = {
-            darkMode: 'class'
-        };
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.10/htmx.min.js"></script>
+    <title>{str}AI - Transform Content into Engaging Podcasts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+        }
+
+        .wave-animation {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
+            transform: rotate(180deg);
+        }
+
+        .wave-animation svg {
+            position: relative;
+            display: block;
+            width: calc(130% + 1.3px);
+            height: 121px;
+        }
+
+        .wave-animation .shape-fill {
+            fill: #FFFFFF;
+        }
+
+        .blob-animation {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            filter: blur(80px);
+            opacity: 0.4;
+            border-radius: 100%;
+            background: linear-gradient(45deg, #3B82F6, #EC4899);
+            animation: blob-movement 15s infinite alternate ease-in-out;
+        }
+
+        @keyframes blob-movement {
+            0% {
+                transform: translate(-5%, -5%) scale(1);
+            }
+
+            50% {
+                transform: translate(0%, 0%) scale(1.05);
+            }
+
+            100% {
+                transform: translate(5%, 5%) scale(1);
+            }
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .parallax-bg {
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #3B82F6, #EC4899);
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .scroll-indicator {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-20px);
+            }
+
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Audio wave animation */
+        .audio-wave {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .audio-wave span {
+            display: block;
+            width: 3px;
+            margin: 0 2px;
+            background: linear-gradient(to bottom, #3B82F6, #EC4899);
+            animation: audio-wave 1.5s infinite ease-in-out;
+            border-radius: 8px;
+        }
+
+        .audio-wave span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .audio-wave span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .audio-wave span:nth-child(4) {
+            animation-delay: 0.6s;
+        }
+
+        .audio-wave span:nth-child(5) {
+            animation-delay: 0.8s;
+        }
+
+        .audio-wave span:nth-child(6) {
+            animation-delay: 1s;
+        }
+
+        @keyframes audio-wave {
+
+            0%,
+            100% {
+                height: 10px;
+            }
+
+            50% {
+                height: 40px;
+            }
+        }
+
+        /* Form input styles */
+        .form-input {
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+    </style>
 </head>
-<body class="h-full bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
-    <!-- Menu Bar -->
-    <div class="bg-white dark:bg-gray-800 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="h-16 flex items-center justify-between">
-                <div class="flex items-center">
-                    <i data-lucide="podcast" class="w-6 h-6 text-blue-600 dark:text-blue-400 mr-2"></i>
-                    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Narrative Podcast Generator</h1>
-                </div>
-               
-                <button 
-                        onclick="openRefineModal()"
-                        class="text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
-                        <i data-lucide="settings" class="w-5 h-5"></i>
-                    </button>
+
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white overflow-x-hidden">
+    <!-- Navbar -->
+    <nav class="fixed top-0 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-50 shadow-sm">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="#" class="flex items-center space-x-2">
+                <i data-lucide="podcast" class="w-8 h-8 text-blue-600"></i>
+                <span class="text-xl font-bold">{str}AI</span>
+            </a>
+            <div class="hidden md:flex space-x-8 items-center">
+                <a href="#features"
+                    class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</a>
+                <a href="#how-it-works"
+                    class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">How
+                    It Works</a>
+                <a href="#beta-access"
+                    class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Join
+                    Beta</a>
+            </div>
+            <div class="flex items-center">
+                <button class="ml-4 md:hidden text-gray-600 dark:text-gray-300" id="menu-toggle">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
             </div>
         </div>
-    </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-gray-900 shadow-lg">
+            <div class="container mx-auto px-4 py-3 flex flex-col space-y-4">
+                <a href="#features"
+                    class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</a>
+                <a href="#how-it-works"
+                    class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">How
+                    It Works</a>
+                <a href="#beta-access"
+                    class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Join
+                    Beta</a>
+            </div>
+        </div>
+    </nav>
 
-    <!-- Main Content -->
-    <div class="flex flex-1 overflow-hidden">
-        <!-- Left Sidebar -->
-        <div class="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Category</h2>
-            
-            <!-- Category Selection -->
-            <div class="space-y-4 mb-6">
-                <button 
-                    onclick="selectCategory('research')"
-                    id="research-btn"
-                    class="w-full p-4 rounded-lg border-2 border-transparent hover:border-red-500 text-left transition-all duration-200">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <i data-lucide="file-text" class="w-5 h-5 text-red-600"></i>
-                        <span class="font-medium text-gray-900 dark:text-white">Research Papers</span>
+    <!-- Hero Section -->
+    <section class="relative hero-gradient min-h-screen flex items-center justify-center overflow-hidden">
+        <div class="blob-animation -top-40 -left-40"></div>
+        <div class="blob-animation top-60 right-20"></div>
+
+        <div class="container mx-auto px-4 py-20 pt-32 md:pt-40 relative z-10">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="text-white space-y-6">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                        Transform Content Into Captivating Podcasts
+                    </h1>
+                    <p class="text-xl md:text-2xl text-blue-100">
+                        Turn boring research papers and technical docs into engaging, narrative-driven podcast content
+                        in minutes with {str}AI.
+                    </p>
+                    <div class="audio-wave mb-8">
+                        <span style="height: 10px;"></span>
+                        <span style="height: 20px;"></span>
+                        <span style="height: 40px;"></span>
+                        <span style="height: 30px;"></span>
+                        <span style="height: 20px;"></span>
+                        <span style="height: 10px;"></span>
                     </div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Transform academic papers into thrilling true crime narratives</p>
-                </button>
-
-                <button 
-                    onclick="selectCategory('technical')"
-                    id="technical-btn"
-                    class="w-full p-4 rounded-lg border-2 border-transparent hover:border-blue-500 text-left transition-all duration-200">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <i data-lucide="book-open" class="w-5 h-5 text-blue-600"></i>
-                        <span class="font-medium text-gray-900 dark:text-white">Technical Documentation</span>
+                    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                        <a href="#beta-access"
+                            class="px-8 py-3 bg-white text-blue-600 font-semibold rounded-full hover:bg-blue-50 transition-colors text-center">
+                            Join Beta Waitlist
+                        </a>
+                        <a href="#how-it-works"
+                            class="px-8 py-3 bg-blue-700 text-white font-semibold rounded-full hover:bg-blue-800 transition-colors text-center">
+                            See How It Works
+                        </a>
                     </div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Turn technical docs into conspiracy theory investigations</p>
-                </button>
-            </div>
-
-            <!-- Upload/Input Section -->
-            <div id="input-section" class="flex-1 hidden">
-                <!-- Research Papers Input -->
-<div id="research-input" class="hidden">
-    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        Upload multiple research papers (PDF) to uncover their hidden mysteries.
-    </p>
-    <!-- Files List -->
-    <div id="pdf-files-list" class="mb-4 space-y-2"></div>
-    
-    <div class="w-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-red-400 dark:hover:border-red-500 transition-colors">
-        <i data-lucide="file-text" class="w-10 h-10 text-gray-400 dark:text-gray-500 mb-3"></i>
-        <input type="file" 
-               name="files"
-               accept=".pdf"
-               class="hidden" 
-               id="pdf-upload"
-               multiple>
-        <button type="button"
-                id="upload-btn"
-                onclick="document.getElementById('pdf-upload').click()"
-                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
-            Add PDFs
-        </button>
-    </div>
-    <button 
-        id="process-pdfs"
-        onclick="processFiles()"
-        disabled
-        class="w-full mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-50">
-        Process Files
-    </button>
-</div>
-
-<!-- Technical Docs Input -->
-<div id="technical-input" class="hidden">
-    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        Enter multiple URLs of technical documentation to reveal the truth.
-    </p>
-    <!-- URLs List -->
-    <div id="url-list" class="mb-4 space-y-2"></div>
-    
-    <form id="url-form" class="space-y-4">
-        <div class="flex gap-2">
-            <input 
-                type="url" 
-                id="doc-url" 
-                placeholder="https://docs.example.com"
-                class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                required>
-            <button 
-                type="button"
-                onclick="addUrl()"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                Add
-            </button>
-        </div>
-        <button 
-            type="button"
-            id="process-urls"
-            onclick="processUrls()"
-            disabled
-            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50">
-            Process URLs
-        </button>
-    </form>
-</div>
-                <!-- Loading indicator -->
-                <div id="loading-indicator" class="hidden items-center space-x-2 mt-4">
-                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">Processing...</span>
                 </div>
-                <div id="processing-status" class="mt-4 text-center text-sm"></div>
-            </div>
-        </div>
+                <div class="hidden md:block relative">
+                    <div class="floating w-full h-full">
+                        <img src="/static/product-screenshot.png" alt="{str}AI App Interface"
+                            class="w-full rounded-lg shadow-2xl border border-blue-400/20">
 
-        <!-- Main Editor Area -->
-        <div class="flex-1 flex flex-col bg-white dark:bg-gray-800">
-            <!-- Transcript Area -->
-            <div class="flex-1 p-4 overflow-y-auto" style="max-height: calc(100vh - 200px);">
-                <div class="max-w-3xl mx-auto" id="transcript-content">
-                    <!-- Transcript content will be loaded here -->
+                        <div class="absolute -bottom-6 -right-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                                    <i data-lucide="podcast" class="w-6 h-6 text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Podcast Generated</p>
+                                    <p class="font-semibold">5 minutes ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Audio Control Section -->
-            <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
-                <div class="max-w-3xl mx-auto">
-                    <!-- Generate Podcast Button -->
-                    <button 
-                        id="generate-podcast"
-                        onclick="generatePodcast()"
-                        disabled
-                        class="w-full bg-gray-400 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed mb-2">
-                        <i data-lucide="mic" class="w-5 h-5"></i>
-                        <span>Generate Podcast</span>
+            <!-- Scroll indicator -->
+            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white text-center">
+                <p class="mb-2 text-blue-100">Scroll to explore</p>
+                <div class="scroll-indicator">
+                    <i data-lucide="chevron-down" class="w-6 h-6 mx-auto"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wave SVG -->
+        <div class="wave-animation">
+            <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"
+                preserveAspectRatio="none">
+                <path
+                    d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
+                    opacity=".25" class="shape-fill"></path>
+                <path
+                    d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z"
+                    opacity=".5" class="shape-fill"></path>
+                <path
+                    d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"
+                    class="shape-fill"></path>
+            </svg>
+        </div>
+    </section>
+
+
+
+    <!-- Beta Access Section -->
+    <section id="beta-access" class="py-20 bg-white dark:bg-gray-900 relative overflow-hidden">
+        <div class="blob-animation opacity-20 -bottom-80 -right-80"></div>
+
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl overflow-hidden">
+                    <div class="grid md:grid-cols-5">
+                        <div class="md:col-span-3 p-8 md:p-12">
+                            <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Join Our Exclusive Beta</h2>
+                            <p class="text-blue-100 text-lg mb-8">
+                                Be among the first to experience {str}AI and transform your content into engaging
+                                podcasts.
+                                Limited spots available!
+                            </p>
+
+                            <form id="beta-form" class="space-y-6">
+                                <div>
+                                    <label for="email" class="block text-sm font-medium text-blue-100 mb-2">Email
+                                        Address</label>
+                                    <input type="email" id="email" name="email" required
+                                        class="form-input w-full px-4 py-3 rounded-lg border-blue-400 focus:border-white bg-blue-700/40 placeholder-blue-200 text-white"
+                                        placeholder="Enter your email">
+                                </div>
+
+                                <div>
+                                    <button type="submit"
+                                        class="w-full bg-white text-blue-600 font-bold py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors">
+                                        Submit
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="hidden md:block md:col-span-2 bg-blue-700 p-12 flex flex-col justify-center">
+                            <div class="space-y-6">
+                                <div class="flex items-start">
+                                    <div
+                                        class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mt-1 mr-4 flex-shrink-0">
+                                        <i data-lucide="check" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    <p class="text-white">Early access to new features</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <div
+                                        class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mt-1 mr-4 flex-shrink-0">
+                                        <i data-lucide="check" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    <p class="text-white">Dedicated support during beta</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <div
+                                        class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mt-1 mr-4 flex-shrink-0">
+                                        <i data-lucide="check" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    <p class="text-white">Input on future development</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <div
+                                        class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mt-1 mr-4 flex-shrink-0">
+                                        <i data-lucide="check" class="w-5 h-5 text-white"></i>
+                                    </div>
+                                    <p class="text-white">Special pricing when we launch</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Features Section -->
+    <section id="features" class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Transform Any Content Into Engaging Podcasts</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                    Our AI-powered platform takes your content and creates compelling audio narratives that captivate
+                    your
+                    audience.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div
+                    class="feature-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <div
+                        class="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Research Paper to True Crime</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Transform academic papers into thrilling true crime narratives. Turn methodology into detective
+                        work
+                        and findings into dramatic revelations.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div
+                    class="feature-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <div
+                        class="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="book-open" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Tech Docs to Conspiracy Theories</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Turn technical documentation into conspiracy-style investigations. Present technical concepts as
+                        "hidden knowledge" being revealed.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div
+                    class="feature-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <div
+                        class="w-14 h-14 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="mic" class="w-6 h-6 text-pink-600 dark:text-pink-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Lifelike Voice Generation</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Create engaging two-speaker podcasts with realistic voices and conversational flow using
+                        advanced
+                        text-to-speech technology.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div
+                    class="feature-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <div
+                        class="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="wand-2" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">AI Transcript Refinement</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Fine-tune your podcast scripts with AI-powered refinement. Adjust tone, style, and content with
+                        simple prompts.
+                    </p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div
+                    class="feature-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <div
+                        class="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="folder" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Project Management</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Organize your podcasts into projects. Create, edit, and manage multiple episodes with our
+                        intuitive
+                        interface.
+                    </p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div
+                    class="feature-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <div
+                        class="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                        <i data-lucide="save" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Easy Export & Sharing</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Export your podcast episodes in standard formats. Ready to publish to popular platforms or share
+                        with your audience.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-20 bg-gray-50 dark:bg-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                    Three simple steps to transform your content into engaging podcast episodes.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="text-center">
+                    <div
+                        class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <span class="text-2xl font-bold text-white">1</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Upload Your Content</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Upload PDF research papers or add URLs to technical documentation you want to transform.
+                    </p>
+                    <div class="mt-6 flex justify-center">
+                        <i data-lucide="upload-cloud" class="w-16 h-16 text-blue-500 opacity-60"></i>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="text-center">
+                    <div
+                        class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <span class="text-2xl font-bold text-white">2</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">AI Transforms Content</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Our AI analyzes your content and creates a compelling narrative podcast script with two
+                        speakers.
+                    </p>
+                    <div class="mt-6 flex justify-center">
+                        <i data-lucide="sparkles" class="w-16 h-16 text-blue-500 opacity-60"></i>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="text-center">
+                    <div
+                        class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <span class="text-2xl font-bold text-white">3</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Generate & Save Audio</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Generate realistic voices for your podcast, refine as needed, and save as episodes in your
+                        library.
+                    </p>
+                    <div class="mt-6 flex justify-center">
+                        <i data-lucide="headphones" class="w-16 h-16 text-blue-500 opacity-60"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-16 text-center">
+                <a href="#beta-access"
+                    class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-colors inline-block">
+                    Join Beta Waitlist
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-4">See {str}AI in Action</h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-400">
+                        Watch how easily you can transform technical content into engaging podcasts with our intuitive
+                        interface.
+                    </p>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <div
+                                class="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mt-1 mr-3 flex-shrink-0">
+                                <i data-lucide="check" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-400">Turn dry research papers into compelling stories
+                            </p>
+                        </div>
+                        <div class="flex items-start">
+                            <div
+                                class="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mt-1 mr-3 flex-shrink-0">
+                                <i data-lucide="check" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-400">Generate realistic voices with proper inflection
+                                and
+                                tone</p>
+                        </div>
+                        <div class="flex items-start">
+                            <div
+                                class="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mt-1 mr-3 flex-shrink-0">
+                                <i data-lucide="check" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-400">Refine scripts and regenerate audio with a few
+                                clicks</p>
+                        </div>
+                    </div>
+                    <button
+                        class="px-6 py-3 bg-blue-600 text-white rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors">
+                        <i data-lucide="play" class="w-5 h-5"></i>
+                        <span>Watch Demo Video</span>
                     </button>
-                    
-                    <!-- Audio Player -->
-                    <div id="audio-section" class="dark:text-white"></div>
+                </div>
+                <div
+                    class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                    <img src="/api/placeholder/600/400" alt="{str}AI Demo" class="w-full rounded">
+                    <div class="flex items-center justify-between mt-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                                <i data-lucide="play" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <span class="ml-2 font-medium">{str}AI Demo</span>
+                        </div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">2:45</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Add this at the end of body, before scripts -->
-<div id="refine-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg mx-4">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Refine Transcript</h3>
-            <button onclick="closeRefineModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-        <div class="p-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Refinement Notes
-            </label>
-            <textarea 
-                id="refinement-notes"
-                class="w-full h-32 px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-lg dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Example: Make it more dramatic, Add more technical details, Make it funnier, etc."
-            ></textarea>
-            <div class="mt-4 flex justify-end space-x-3">
-                <button 
-                    onclick="closeRefineModal()" 
-                    class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
-                    Cancel
-                </button>
-                <button 
-                    onclick="refineTranscript()"
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                    Refine
-                </button>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section class="py-20 bg-white dark:bg-gray-900">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Perfect For</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                    {str}AI helps various organizations transform their content into engaging audio experiences.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Use Case 1 -->
+                <div
+                    class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800/30 text-center">
+                    <div
+                        class="w-16 h-16 bg-blue-100 dark:bg-blue-800/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="graduation-cap" class="w-8 h-8 text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Universities</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Convert research papers into engaging podcasts for students and wider audiences with {str}AI.
+                    </p>
+                </div>
+
+                <!-- Use Case 2 -->
+                <div
+                    class="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl border border-purple-100 dark:border-purple-800/30 text-center">
+                    <div
+                        class="w-16 h-16 bg-purple-100 dark:bg-purple-800/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="code" class="w-8 h-8 text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Tech Companies</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Make technical documentation accessible and entertaining through audio format.
+                    </p>
+                </div>
+
+                <!-- Use Case 3 -->
+                <div
+                    class="bg-red-50 dark:bg-red-900/20 p-6 rounded-xl border border-red-100 dark:border-red-800/30 text-center">
+                    <div
+                        class="w-16 h-16 bg-red-100 dark:bg-red-800/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="newspaper" class="w-8 h-8 text-red-600 dark:text-red-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Media Organizations</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Create compelling podcast content from existing articles and reports.
+                    </p>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-    <script src="static/script.js"></script>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="col-span-1">
+                    <div class="flex items-center space-x-2 mb-6">
+                        <i data-lucide="podcast" class="w-8 h-8 text-blue-500"></i>
+                        <span class="text-xl font-bold">{str}AI</span>
+                    </div>
+                    <p class="text-gray-400 mb-6">
+                        Transform boring content into captivating podcasts with {str}AI.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-blue-500 transition-colors">
+                            <i data-lucide="twitter" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-blue-500 transition-colors">
+                            <i data-lucide="linkedin" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-blue-500 transition-colors">
+                            <i data-lucide="facebook" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-blue-500 transition-colors">
+                            <i data-lucide="instagram" class="w-5 h-5"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-span-1">
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#features" class="text-gray-400 hover:text-white transition-colors">Features</a>
+                        </li>
+                        <li><a href="#how-it-works" class="text-gray-400 hover:text-white transition-colors">How It
+                                Works</a></li>
+                        <li><a href="#beta-access" class="text-gray-400 hover:text-white transition-colors">Join
+                                Beta</a></li>
+                    </ul>
+                </div>
+
+
+                <div class="col-span-1">
+                    <h3 class="text-lg font-semibold mb-4">Stay Updated</h3>
+                    <p class="text-gray-400 mb-4">Subscribe to our newsletter for the latest updates.</p>
+                    <form class="space-y-2">
+                        <input type="email" placeholder="Your email address"
+                            class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+                        <button type="submit"
+                            class="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">© 2025 {str}AI. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Mobile menu toggle
+        document.getElementById('menu-toggle').addEventListener('click', function () {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+
+        // FAQ toggle
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const icon = element.querySelector('[data-lucide="chevron-down"]');
+
+            answer.classList.toggle('hidden');
+            if (!answer.classList.contains('hidden')) {
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.style.transform = 'rotate(0)';
+            }
+        }
+
+        // Form submission (for beta signup)
+        document.getElementById('beta-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const form = this;
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = 'Processing...';
+
+            // Send email to souvik.ghosh@strai.be
+            // This would normally be handled by a backend service
+            // For demonstration purposes, we'll just show a success message
+            // In a real implementation, you would send this data to your server
+            // which would then send an email notification
+            console.log(`Beta signup request for: ${email} - will be sent to: souvik.ghosh@strai.be`);
+
+            setTimeout(() => {
+                form.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="check" class="w-8 h-8 text-blue-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Thank You!</h3>
+                        <p class="text-blue-100">Your request has been received. We'll be in touch soon.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+            }, 1500);
+        });
+    </script>
 </body>
+
 </html>

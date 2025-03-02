@@ -92,22 +92,20 @@ source .venv/bin/activate  # Unix/macOS
 # Install dependencies
 uv pip install -r requirements.txt
 
-# Set environment variables
-export GOOGLE_API_KEY=your_gemini_api_key
-export OPENAI_API_KEY=your_openai_api_key
-```
 
 ### Running the Application
 ```bash
 # Start the FastAPI server
-uvicorn main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000
 ```
 
 ### Configuration
 1. Access the web interface at `http://localhost:8000`
-2. Select your content type (Research or Technical)
-3. Upload documents or paste URLs
-4. Generate and refine your podcast narrative
+2. Create account at your supabase
+3. Login to the app
+4. Select your content type (Research or Technical)
+5. Upload documents or paste URLs
+6. Generate and refine your podcast narrative
 
 
 ## 🤝 Contributing
