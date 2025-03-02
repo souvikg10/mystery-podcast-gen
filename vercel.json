@@ -13,7 +13,7 @@
         },
         {
             "src": "/(.*)",
-            "dest": "/app/api/routes/*.py"
+            "dest": "app/main.py"
         }
     ]
 }
