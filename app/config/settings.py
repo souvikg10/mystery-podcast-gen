@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # Supabase
     SUPABASE_URL: str = os.getenv("SUPABASE_URL")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
+
+    #RESEND
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY")
     
     
     # Voice mappings

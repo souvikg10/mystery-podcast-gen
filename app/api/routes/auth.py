@@ -2,15 +2,67 @@
 """
 API routes for authentication and user management.
 """
-from fastapi import APIRouter, HTTPException, Depends, Request
+import resend
+from fastapi import APIRouter, HTTPException, Depends, Request, Body
 from fastapi.responses import JSONResponse
 
+from app.config.settings import settings
 from app.db.supabase import supabase_client
-from app.models.auth import UserSignIn, SignInResponse, OnboardingData
+from app.models.auth import UserSignIn, SignInResponse, OnboardingData, EmailSignup
 from app.api.dependencies import get_current_user
 from app.models.auth import PasswordReset
 
 router = APIRouter()
+
+@router.post("/beta-signup")
+async def beta_signup(signup_data: EmailSignup = Body(...)):
+    """Handle beta signup emails using Resend."""
+    try:
+        # Make sure Resend API key is set
+        resend_api_key = settings.RESEND_API_KEY
+        if not resend_api_key:
+            raise HTTPException(status_code=500, detail="Email service not configured")
+        
+        resend.api_key = resend_api_key
+        
+        params = {
+            "from": "signup@beta.strai.be",  # Update with your sending domain
+            "to": "souvik.ghosh@strai.be",
+            "subject": "New {str}AI Beta Signup",
+            "html": f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+                <h2 style="color: #3B82F6;">New Beta Signup</h2>
+                <p>Someone has requested to join the {{str}}AI beta program.</p>
+                <p><strong>Email:</strong> {signup_data.email}</p>
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="color: #666; font-size: 14px;">This is an automated notification from your {{str}}AI website.</p>
+            </div>
+            """
+        }
+        
+        # Send email notification
+        response = resend.Emails.send(params)
+        
+        # Optional: Store beta signup in database
+        try:
+            # Add to a beta_signups table in your Supabase database
+            supabase_client.table('beta_signups').insert({
+                "email": signup_data.email,
+                "created_at": "now()"
+            }).execute()
+        except Exception as db_error:
+            # Log but don't fail if DB storage fails
+            print(f"Failed to store beta signup: {str(db_error)}")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": "Beta signup successful"
+        })
+        
+    except Exception as e:
+        print(f"Beta signup error: {str(e)}")
+        # Don't expose detailed errors to the client
+        raise HTTPException(status_code=500, detail="Failed to process beta signup")
 
 @router.post("/signin", response_model=SignInResponse)
 async def sign_in(request: Request):

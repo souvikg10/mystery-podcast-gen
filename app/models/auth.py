@@ -48,3 +48,6 @@ class UserProjectsResponse(BaseModel):
     status: str = "success"
     organization: Optional[OrganizationResponse] = None
     projects: list = []
+
+class EmailSignup(BaseModel):
+    email: EmailStr

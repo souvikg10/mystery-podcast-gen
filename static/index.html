@@ -754,7 +754,6 @@
             }
         }
 
-        // Form submission (for beta signup)
         document.getElementById('beta-form').addEventListener('submit', function (e) {
             e.preventDefault();
 
@@ -765,25 +764,37 @@
             submitButton.disabled = true;
             submitButton.innerHTML = 'Processing...';
 
-            // Send email to souvik.ghosh@strai.be
-            // This would normally be handled by a backend service
-            // For demonstration purposes, we'll just show a success message
-            // In a real implementation, you would send this data to your server
-            // which would then send an email notification
-            console.log(`Beta signup request for: ${email} - will be sent to: souvik.ghosh@strai.be`);
-
-            setTimeout(() => {
-                form.innerHTML = `
-                    <div class="text-center py-8">
-                        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i data-lucide="check" class="w-8 h-8 text-blue-600"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2">Thank You!</h3>
-                        <p class="text-blue-100">Your request has been received. We'll be in touch soon.</p>
+            fetch('/auth/beta-signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        form.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="check" class="w-8 h-8 text-blue-600"></i>
                     </div>
-                `;
-                lucide.createIcons();
-            }, 1500);
+                    <h3 class="text-xl font-bold text-white mb-2">Thank You!</h3>
+                    <p class="text-blue-100">Your request has been received. We'll be in touch soon.</p>
+                </div>
+            `;
+                        lucide.createIcons();
+                    } else {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = 'Submit';
+                        alert('There was an error submitting your request. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Submit';
+                    alert('There was an error submitting your request. Please try again.');
+                });
         });
     </script>
 </body>
