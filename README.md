@@ -2,6 +2,8 @@
 
 Transform dry research papers and technical documentation into captivating podcast narratives with AI-powered storytelling!
 
+![Image](./static/product-screenshot.png)
+
 ## 🌟 Key Features
 
 ### Dual Content Transformation
