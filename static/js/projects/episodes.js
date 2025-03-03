@@ -46,7 +46,7 @@ function renderEpisodes(episodes) {
             </div>
             <div class="flex items-center space-x-2">
                 <button 
-                    onclick="showTranscript('${episode.id}', ${JSON.stringify(episode.transcript).replace(/"/g, '&quot;')}, '${episode.audio_url})"
+                    onclick="showTranscript('${episode.id}', ${JSON.stringify(episode.transcript).replace(/"/g, '&quot;')}, '${episode.audio_url}')"
                     class="p-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors" 
                     title="View Transcript">
                     <i data-lucide="file-text" class="w-5 h-5"></i>
