@@ -10,7 +10,6 @@ function updateTranscript(transcript) {
     // - "** Text" (will be attributed to previous speaker)
     // - "Text" (will be attributed to previous speaker if possible)
     const speakerDialogueRegex = /^\s*(?:\*\*)?(Speaker\s*\d+)(?:\*\*)?(?:\s*\(([^)]+)\))?:\s*(.+)/i;
-
     // Check for incomplete speaker tags (e.g., "** Text")
     const incompleteTagRegex = /^\s*\*\*\s+(.+)/;
 
@@ -30,10 +29,8 @@ function updateTranscript(transcript) {
     for (let i = 0; i < transcriptLines.length; i++) {
         const line = transcriptLines[i];
         if (!line) continue; // Skip empty lines
-
         // Try to match standard speaker format
         const speakerMatch = line.match(speakerDialogueRegex);
-
         // Try to match incomplete tag format (like "** Text")
         const incompleteMatch = !speakerMatch ? line.match(incompleteTagRegex) : null;
 
@@ -65,6 +62,7 @@ function updateTranscript(transcript) {
             // Handle bold text that might be a speaker without proper format
             // Extract what's between ** and check if it has "Speaker" in it
             const boldText = line.match(/\*\*([^*]+)\*\*/);
+
             if (boldText && boldText[1].toLowerCase().includes('speaker')) {
                 // Attempt to extract speaker number
                 const speakerNumMatch = boldText[1].match(/speaker\s*(\d+)/i);
@@ -155,22 +153,22 @@ function updateTranscript(transcript) {
         const speakerIndex = speakerNum ? parseInt(speakerNum[1]) - 1 : index;
 
         return `
-            <div class="mb-6" data-original-line="${item.speaker}: ${item.tone ? `(${item.tone}) ` : ''}${item.text}">
-                <div class="flex items-start gap-4">
-                    <span class="text-sm font-medium text-${speakerIndex % 2 === 0 ? mainColor : altColor}-600 dark:text-${speakerIndex % 2 === 0 ? mainColor : altColor}-400 w-24 flex-shrink-0">
-                        ${item.speaker}
-                    </span>
-                    <div class="flex-1 p-4 bg-${speakerIndex % 2 === 0 ? mainColor : altColor}-50 dark:bg-${speakerIndex % 2 === 0 ? mainColor : altColor}-900/10 rounded-lg">
-                        ${item.tone ? `<div class="text-sm italic text-gray-500 dark:text-gray-400 mb-2">${item.tone}</div>` : ''}
-                        <div 
-                            class="text-gray-800 dark:text-gray-200" 
-                            contenteditable="true" 
-                            data-original-text="${item.text}"
-                        >${item.text}</div>
-                    </div>
-                </div>
+    <div class="mb-6" data-original-line="${encodeURIComponent(item.speaker + ': ' + (item.tone ? `(${item.tone}) ` : '') + item.text)}">
+        <div class="flex items-start gap-4">
+            <span class="text-sm font-medium text-${speakerIndex % 2 === 0 ? mainColor : altColor}-600 dark:text-${speakerIndex % 2 === 0 ? mainColor : altColor}-400 w-24 flex-shrink-0">
+                ${item.speaker}
+            </span>
+            <div class="flex-1 p-4 bg-${speakerIndex % 2 === 0 ? mainColor : altColor}-50 dark:bg-${speakerIndex % 2 === 0 ? mainColor : altColor}-900/10 rounded-lg">
+                ${item.tone ? `<div class="text-sm italic text-gray-500 dark:text-gray-400 mb-2">${item.tone}</div>` : ''}
+                <div 
+                    class="text-gray-800 dark:text-gray-200" 
+                    contenteditable="true" 
+                    data-original-text="${encodeURIComponent(item.text)}"
+                >${item.text}</div>
             </div>
-        `;
+        </div>
+    </div>
+`;
     }).join('');
 
     // If no lines were parsed, provide a helpful message
