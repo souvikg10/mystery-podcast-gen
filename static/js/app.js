@@ -36,14 +36,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize event listeners
     initializeEventListeners();
+
+    // Ensure file upload listeners are set up
+    if (typeof initializeFileUploadListeners === 'function') {
+        initializeFileUploadListeners();
+    }
 });
 
 // Set up event listeners that aren't tied to dynamically generated elements
 function initializeEventListeners() {
-    // File upload listeners
+    // Explicitly set up file upload listener
     const pdfUpload = document.getElementById('pdf-upload');
     if (pdfUpload) {
+        // Remove any existing listeners first
+        pdfUpload.removeEventListener('change', handleFileSelection);
         pdfUpload.addEventListener('change', handleFileSelection);
+        console.log('PDF upload event listener added');
     }
 
     // Password reset form

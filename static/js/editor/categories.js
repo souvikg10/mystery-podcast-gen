@@ -1,6 +1,4 @@
-// Global storage for files and URLs
-let selectedFiles = [];
-let selectedUrls = [];
+
 
 // Select content category (research or technical)
 function selectCategory(category) {

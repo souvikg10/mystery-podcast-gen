@@ -122,7 +122,7 @@ class OpenAITTS(TTSProvider):
             )
             
             # Get the response content
-            audio_data = await response.read()
+            audio_data = response.content
             
             # Simple duration estimation based on word count
             duration = len(text.split()) * 0.3  # Rough estimate: 0.3 seconds per word

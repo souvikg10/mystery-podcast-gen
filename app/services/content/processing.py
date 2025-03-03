@@ -76,17 +76,6 @@ async def process_combined_content(contents: List[str], category: ContentCategor
     # Generate transcript
     transcript = generate_podcast_script(category, processed_content)
     
-    # Save processed content and transcript
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    content_path = settings.EXTRACTED_CONTENT_DIR / f"combined_content_{timestamp}.txt"
-    with open(content_path, "w", encoding="utf-8") as f:
-        f.write(processed_content)
-        
-    transcript_path = settings.TRANSCRIPT_CONTENT_DIR / f"transcript_{timestamp}.txt"
-    with open(transcript_path, "w", encoding="utf-8") as f:
-        f.write(transcript)
-    
     return transcript
 
 def parse_transcript(transcript: str) -> List[AudioSegment]:

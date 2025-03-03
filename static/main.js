@@ -38,6 +38,12 @@ function loadScripts(scripts, index) {
     if (index >= scripts.length) {
         // All scripts loaded, initialize the app
         console.log('All scripts loaded successfully');
+
+        // Ensure file upload listeners are set up
+        if (typeof initializeFileUploadListeners === 'function') {
+            initializeFileUploadListeners();
+        }
+
         if (typeof initializeApp === 'function') {
             initializeApp();
         }
@@ -47,6 +53,9 @@ function loadScripts(scripts, index) {
     const script = document.createElement('script');
     script.src = scripts[index];
     script.onload = () => {
+        // Log each successfully loaded script
+        console.log(`Loaded script: ${scripts[index]}`);
+
         // Load the next script
         loadScripts(scripts, index + 1);
     };
@@ -69,7 +78,11 @@ function initializeApp() {
     // Initialize various components
     initializeThemeToggle();
     initializeModalListeners();
-    initializeFileUploadListeners();
+
+    // Explicitly call file upload listeners initialization
+    if (typeof initializeFileUploadListeners === 'function') {
+        initializeFileUploadListeners();
+    }
 
     // Check authentication
     const token = localStorage.getItem('auth_token');

@@ -13,7 +13,7 @@ class ContentCategory(str, Enum):
 
 class ContentUploadRequest(BaseModel):
     """Request body for URL content processing."""
-    urls: List[HttpUrl]
+    urls: List[str]
 
 class ContentProcessingResponse(BaseModel):
     """Response for content processing."""
